@@ -1,6 +1,6 @@
 import ipywidgets as w
 from . import CONTEXT
-from .utils import get_sql_eps
+from .utils import get_sql_eps, JDBC
 
 
 class DBStateSingleton(object):
