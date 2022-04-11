@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import requests
 import sqlparse
-from types import SimpleNamespace
+from collections import namedtuple
 from typing import NamedTuple
+
+from . import CONTEXT
 
 
 class Query(NamedTuple):
@@ -30,11 +33,55 @@ class DBstressCfg(NamedTuple):
     result_path: os.PathLike = "/tmp/dbstress/output/"
 
 
-def format_str(detail_dict=None) -> str:
-    if detail_dict:
-        return "\n".join([f'{k:<15}{str(v):>30}' for k, v in sorted(detail_dict.items())])
+def format_str(detail_dict, filter_keys=None) -> str:
+    lines = []
+    if filter_keys:
+        lines = [f'{k:<15}{str(detail_dict[k]):>30}' for k in filter_keys]
     else:
-        return "NOTHING DOING HERE, BOSS"
+        lines = [f'{k:<15}{str(v):>30}' for k, v in detail_dict.items()]
+    return "\n".join(lines)
+
+
+def simba_jdbc(token: str, jdbc_d: dict) -> JDBC:
+    host = jdbc_d["hostname"]
+    httpPath = jdbc_d["path"]
+    port = jdbc_d["port"]
+    string = f"jdbc:spark://{host}:{port}/{{database}};transportMode=http;ssl=1;"
+    string += f"AuthMech=3;httpPath={httpPath};AuthMech=3;UID=token;PWD={token};UseNativeQuery=1"
+    return JDBC(string)
+
+
+def get_sql_eps(token: str, host: str = CONTEXT.host):
+
+    apiurl = f"https://{host}/api/2.0/sql/endpoints"
+    headers = {"Authorization": f"Bearer {token}"}
+    eps_raw = requests.get(apiurl, headers=headers).json()['endpoints']
+    key_map = {
+        "name": "Name",
+        "cluster_size": "Size",
+        "enable_photon": "Photon",
+        "creator_name": "Creator",
+        "enable_serverless_compute": "Serverless",
+        "min_num_clusters": "Clusters_min",
+        "max_num_clusters": "Clusters_max",
+        "state": "State",
+        "id": "ID",
+        "odbc_params": "JDBC"
+    }
+    eps = {ep["name"]: {k: v for k, v in ep.items() if key_map.get(k)}
+           for ep in eps_raw}
+
+    ordered_keys = ["State", "Creator", "Size"]
+    remove_keys = ["JDBC", "Name"]
+    filter_keys = ordered_keys + \
+        sorted(set(key_map.values()) - set(ordered_keys) - set(remove_keys))
+
+    for ep in eps.values():
+        ep["format_str"] = format_str(
+            {v: ep[k] for k, v in key_map.items()}, filter_keys)
+        ep["odbc_params"] = simba_jdbc(token, ep["odbc_params"])
+
+    return {name: namedtuple('ep', e.keys())(*e.values()) for name, e in eps.items()}
 
 
 # read in a list of sql filepaths and convert syntax and strip comments
@@ -92,7 +139,7 @@ def yaml_str(query: Query, jdbc: JDBC, conn: ConnConfig = ConnConfig()) -> str:
     return out
 
 
-def write_yaml(yamls:list[str], dbs_cfg:DBstressCfg = DBstressCfg(), info:bool = False) -> None:
+def write_yaml(yamls: list[str], dbs_cfg: DBstressCfg = DBstressCfg(), info: bool = False) -> None:
     yaml_out = "".join(yamls)
     yaml_path = dbs_cfg.yaml_path
 

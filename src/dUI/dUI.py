@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+# import json
 import ipywidgets as w
-import pandas as pd
-
-from .sql_select import StateSingleton
+from pyspark.sql import DataFrame
+from . import spark
 from .utils import *
+
+
+
 
 def start(root_path=None, show_debug=False, debug_ext=None):
     """
@@ -17,6 +20,7 @@ def start(root_path=None, show_debug=False, debug_ext=None):
                 this is useful if you want a larger debug output at a different cell
                 app widgets post messages by appending to debug_w.value
     """
+    from .sql_select import StateSingleton
     
     if debug_ext:
         state = StateSingleton(debug_ext)
@@ -36,7 +40,10 @@ def start(root_path=None, show_debug=False, debug_ext=None):
         return w.VBox([path_select, sql_select])
 
 
-def get_selected(state: StateSingleton = StateSingleton()) -> list[os.PathLike]:
+def get_selected() -> list[os.PathLike]:
+    from .sql_select import StateSingleton
+
+    state = StateSingleton()
     sel_files = []
     for (p, dt) in state.dirtabs.items():
         sel_files += [p / Path(f.description)
@@ -47,13 +54,12 @@ def get_selected(state: StateSingleton = StateSingleton()) -> list[os.PathLike]:
 def test_connection(jdbc: JDBC,
                     query_str: str = "SELECT 1;",
                     dbs_cfg: DBstressCfg = DBstressCfg(),
-                    conn: ConnConfig = ConnConfig()) -> pd.DataFrame:
+                    conn: ConnConfig = ConnConfig()) -> DataFrame:
 
     
     check_dbs_cfg(dbs_cfg)
     q = Query("test", query_str)
     yaml_out = [yaml_str(q, jdbc, conn)]
-
     write_yaml(yaml_out, dbs_cfg, info=True)
 
     def toJStringArray(arr):
@@ -62,8 +68,7 @@ def test_connection(jdbc: JDBC,
             jarr[i] = arr[i]
         return jarr
 
-    # sc._jvm.py4j.GatewayServer.turnLoggingOn()
-
     args = toJStringArray(["-c",dbs_cfg.yaml_path,"-o",dbs_cfg.result_path])
 
-    sc._jvm.eu.semberal.dbstress.Main.main(args)
+    spark._jvm.eu.semberal.dbstress.Main.main(args)
+    return spark.read.option("header", True).option("InferSchema", True).csv(dbs_cfg.result_path)

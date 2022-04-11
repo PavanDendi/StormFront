@@ -8,21 +8,7 @@ from pprint import pformat
 from typing import NamedTuple
 
 import ipywidgets as w
-
-from pyspark.sql import SparkSession
-from pyspark.dbutils import DBUtils
-spark = SparkSession.getActiveSession()
-dbutils = DBUtils.get_dbutils(DBUtils, spark)
-
-DBR = True if 'dbruntime' in sys.modules else False
-CONTEXT_RAW = json.loads(
-    dbutils.notebook.entry_point.getDbutils().notebook().getContext().toJson()
-)['tags'] if DBR else {}
-CONTEXT = NamedTuple("CONTEXT", DBR=bool, user=str, host=str)(
-    DBR,
-    CONTEXT_RAW.get("user", "local.user"),
-    CONTEXT_RAW.get("browserHostName", "127.0.0.1")
-)
+from . import CONTEXT
 
 
 class PathSelect(NamedTuple):
@@ -144,7 +130,8 @@ class StateSingleton(object):
         return cls._instance
 
     def change_root(self, new_root: str = None) -> None:
-        old_root = Path(self.root).resolve() if self.root else Path(self.default_root).resolve()
+        old_root = Path(self.root).resolve() if self.root else Path(
+            self.default_root).resolve()
         new_root = Path(new_root).resolve() if new_root else old_root
         new_dirs = self._ls_dirs(new_root)
         self.debug.value += f"\n[state][change_root] old: {old_root}  new: {new_root}"
