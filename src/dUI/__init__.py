@@ -2,8 +2,10 @@ import json
 import sys
 from collections import namedtuple
 from pyspark.sql import SparkSession
+from pyspark.context import SparkContext
 
 spark = SparkSession.getActiveSession()
+sc = SparkContext.getOrCreate()
 
 DBR = True if 'dbruntime' in sys.modules else False
 if DBR:

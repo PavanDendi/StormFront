@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 # import json
+from pathlib import Path
 import ipywidgets as w
 from pyspark.sql import DataFrame
-from . import spark
+from . import spark, sc
 from .utils import *
 
 
@@ -71,4 +72,36 @@ def test_connection(jdbc: JDBC,
     args = toJStringArray(["-c",dbs_cfg.yaml_path,"-o",dbs_cfg.result_path])
 
     spark._jvm.eu.semberal.dbstress.Main.main(args)
-    return spark.read.option("header", True).option("InferSchema", True).csv(dbs_cfg.result_path)
+    
+    dbfs_dir = list(Path(dbs_cfg.result_path).parts)
+    dbfs_dir.pop(1)
+    dbfs_dir = str(Path(*dbfs_dir))
+    
+    return spark.read.option("header", True).option("InferSchema", True).csv(dbfs_dir)
+
+def run(jdbc: JDBC,
+        queries: list[Query],
+        dbs_cfg: DBstressCfg = DBstressCfg(),
+        conn: ConnConfig = ConnConfig()) -> DataFrame:
+
+    
+    check_dbs_cfg(dbs_cfg)
+    #q = Query("test", query_str)
+    yaml_out = [yaml_str(q, jdbc, conn) for q in queries]
+    write_yaml(yaml_out, dbs_cfg, info=True)
+
+    def toJStringArray(arr):
+        jarr = sc._gateway.new_array(sc._jvm.java.lang.String, len(arr))
+        for i in range(len(arr)):
+            jarr[i] = arr[i]
+        return jarr
+
+    args = toJStringArray(["-c",dbs_cfg.yaml_path,"-o",dbs_cfg.result_path])
+
+    spark._jvm.eu.semberal.dbstress.Main.main(args)
+    
+    dbfs_dir = list(Path(dbs_cfg.result_path).parts)
+    dbfs_dir.pop(1)
+    dbfs_dir = str(Path(*dbfs_dir))
+    
+    return spark.read.option("header", True).option("InferSchema", True).csv(dbfs_dir)

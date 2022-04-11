@@ -81,14 +81,14 @@ class SQLEPConfig(w.HBox):
         # debug.value += "\nnew_ep: " + new_ep
         self.ep_details.value = self.eps.get(new_ep).format_str
 
-    def get_jdbc(self, log_level=None) -> str:
+    def get_jdbc(self, log_level=None) -> JDBC:
         value = self.default_db.value
         default_val = self.default_db.placeholder
         database = value if value != "" else default_val
         sel_ep = self.ep_list.value
         log_level = f";LogLevel={log_level}" if log_level else ""
         jdbc = self.eps[sel_ep].odbc_params.string.replace(
-            "{{database}}", database) + log_level
+            '{database}', database) + log_level
         return JDBC(jdbc)
 
 
