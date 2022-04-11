@@ -6,7 +6,7 @@
 # MAGIC 
 # MAGIC install custom dbstress jar from https://github.com/PavanDendi/dbstress/tree/databricks
 # MAGIC 
-# MAGIC Compiled binary can be found in the github Releases [here](https://github.com/PavanDendi/dbstress/releases/download/0.0.0/dbstress-assembly-0.0.0-SNAPSHOT.jar), or compile from source using `sbt assembly`
+# MAGIC Compiled binary can be found in the github Releases [HERE](https://github.com/PavanDendi/dbstress/releases/download/0.0.0/dbstress-assembly-0.0.0-SNAPSHOT.jar), or compile from source using `sbt assembly`
 # MAGIC 
 # MAGIC Cluster must be running a DBR version that supports ipykernel.  Tested on DBR 10.4 LTS
 # MAGIC 
@@ -28,6 +28,11 @@ display(dUI.start())
 # DBTITLE 1,Select DB SQL Endpoint
 from src.dUI.db_select import SQLEPConfig
 
+# PAT token needed in order to query the workspace for DB SQL Endpoints
+# See https://docs.databricks.com/dev-tools/api/latest/authentication.html
+#    for instructions on how to generate a PAT
+# See https://docs.databricks.com/security/secrets/index.html
+#    for how to use the Secrets feature to securely store credentials
 token = dbutils.secrets.get("fieldeng", "prd-pat")
 ep_sel = SQLEPConfig(token)
 display(ep_sel)
@@ -57,7 +62,6 @@ display(dUI.run(jdbc, [Query("test", "SELECT 1")], dbs_cfg=dbstress_cfg, conn=co
 # DBTITLE 1,Run dbstress with Selected SQL files and JDBC Connection
 from pathlib import Path
 from src.dUI.utils import read_sql_files, ConnConfig, DBstressCfg
-from src.dUI.utils import ConnConfig, DBstressCfg
 
 
 jdbc = ep_sel.get_jdbc()
