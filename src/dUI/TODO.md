@@ -15,7 +15,6 @@ modify dbstress or dUI?
 https://github.com/PavanDendi/delta-optimizer
 
 ## dbstress
-****** test database connection
 ****** surface dbstress output/errors
 
 ## sql endpoint chooser
