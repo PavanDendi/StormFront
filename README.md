@@ -4,7 +4,7 @@ dUI is a notebook front end for the dbstress concurrency benchmarking tool.  It 
 
 dUI is meant to run in a Databricks workspace, and uses `ipywidgets` to generate the UI.
 
-Clone this repo into your Databricks Workspace and open `dUI_nb.py`.  Run each cell one by one to selec
+Clone this repo into your Databricks Workspace and open `dUI_nb.py`.  Run each cell one by one to select which sql files to run and which SQL endpoint to query.
 
 # Dependencies
 
