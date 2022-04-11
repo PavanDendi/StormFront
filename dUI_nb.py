@@ -4,6 +4,13 @@
 # MAGIC install custom dbstress jar from https://github.com/PavanDendi/dbstress/tree/databricks
 # MAGIC 
 # MAGIC Compiled binary can be found in the github Releases [here](https://github.com/PavanDendi/dbstress/releases/download/0.0.0/dbstress-assembly-0.0.0-SNAPSHOT.jar), or compile from source using `sbt assembly`
+# MAGIC 
+# MAGIC Cluster must be running a DBR version that supports ipykernel.  Tested on DBR 10.4 LTS
+# MAGIC 
+# MAGIC Enable ipykernel by adding to cluster config
+# MAGIC ```
+# MAGIC spark.databricks.python.defaultPythonRepl ipykernel
+# MAGIC ```
 
 # COMMAND ----------
 
