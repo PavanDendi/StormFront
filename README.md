@@ -8,6 +8,8 @@ Clone this repo into your Databricks Workspace and open `dUI_nb.py`.  Run each c
 
 # Dependencies
 
+install `slqparse` either as a cluster library or as a notebook scoped library using `%pip install sqlparse`
+
 Install custom dbstress jar from https://github.com/PavanDendi/dbstress/tree/databricks to your cluster.
 
 Compiled binary can be found in the github Releases [HERE](https://github.com/PavanDendi/dbstress/releases/download/0.0.0/dbstress-assembly-0.0.0-SNAPSHOT.jar), or compile from source using `sbt assembly` from the dbstress repo root directory.

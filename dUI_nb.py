@@ -1,6 +1,9 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Dependencies
+# MAGIC 
+# MAGIC install `slqparse` either as a cluster library or as a notebook scoped library using `%pip install sqlparse`
+# MAGIC 
 # MAGIC install custom dbstress jar from https://github.com/PavanDendi/dbstress/tree/databricks
 # MAGIC 
 # MAGIC Compiled binary can be found in the github Releases [here](https://github.com/PavanDendi/dbstress/releases/download/0.0.0/dbstress-assembly-0.0.0-SNAPSHOT.jar), or compile from source using `sbt assembly`
@@ -11,15 +14,6 @@
 # MAGIC ```
 # MAGIC spark.databricks.python.defaultPythonRepl ipykernel
 # MAGIC ```
-
-# COMMAND ----------
-
-# DBTITLE 1,Show Debug Window
-import ipywidgets as w
-from src.dUI.sql_select import StateSingleton
-
-debug_ext = StateSingleton().debug
-display(debug_ext)
 
 # COMMAND ----------
 
