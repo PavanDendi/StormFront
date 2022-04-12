@@ -110,11 +110,6 @@ def read_sql_folder(path: os.PathLike, info: bool = False) -> list(Query):
 def check_dbs_cfg(dbs_cfg: DBstressCfg = DBstressCfg()) -> None:
     yaml_dir = Path(dbs_cfg.yaml_path).parent
     out_dir = Path(dbs_cfg.result_path)
-#    if not out_dir.is_dir() or Path(dbs_cfg.yaml_path).is_dir():
-#        print("yaml path is not a filename or result path is not a directory")
-#        print(f"yaml path: {dbs_cfg.yaml_path}")
-#        print(f"result path: {dbs_cfg.result_path}")
-#        raise ValueError
     if not os.path.exists(yaml_dir):
         print(f"Config directory {yaml_dir} does not exist")
         print(f"Creating {yaml_dir}")
