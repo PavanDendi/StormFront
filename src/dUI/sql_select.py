@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from pprint import pformat
 from typing import NamedTuple
+import datetime
 
 import ipywidgets as w
 from . import CONTEXT
@@ -43,7 +44,7 @@ class DirSelectRow(w.HBox):
         super().__init__([self.dir_b, self.all_b, self.none_b])
 
     def __on_toggle__(self, change):
-        self.debug.value += f"\n[DirRow] '{self.path.name}' received: {pformat(change)}"
+        self.debug.value += f"\n{datetime.datetime.now()}[DirRow] '{self.path.name}' received: {pformat(change)}"
         self.dir_b.icon = 'folder-open' if self.dir_b.value else 'folder'
         self.selected = self.dir_b.value
         self.state.update_tabs(change)
@@ -134,7 +135,7 @@ class StateSingleton(object):
             self.default_root).resolve()
         new_root = Path(new_root).resolve() if new_root else old_root
         new_dirs = self._ls_dirs(new_root)
-        self.debug.value += f"\n[state][change_root] old: {old_root}  new: {new_root}"
+        self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] old: {old_root}  new: {new_root}"
         # TODO: implement root_dir and dirtab cache
 
         # check if new root is actually new or sub dirs have changed
@@ -142,7 +143,7 @@ class StateSingleton(object):
             self.root = new_root
             # update path_select widget to start arg; this should only happen once when state singleton is created
             val = self.path_select.path_t.value
-            self.debug.value += f"\n[state][change_root] updating path_select: {val} -> {self.root}"
+            self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] updating path_select: {val} -> {self.root}"
             if val == "":
                 self.path_select.path_t.value = str(self.root)
 
@@ -153,29 +154,29 @@ class StateSingleton(object):
                 self.dirtabs.update({d.path: DirTab(dir_sel, clist)})
             self.dirtabs[self.root].dir_sel.dir_b.value = True
 
-            self.debug.value += f"\n[state][change_root] changing dirs: {pformat([p.name for p in self.dirtabs.keys()])}"
+            self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] changing dirs: {pformat([p.name for p in self.dirtabs.keys()])}"
             self.dir_select.children = [
                 dt.dir_sel for dt in self.dirtabs.values()]
-            self.debug.value += f"\n[state][change_root] updating tabs"
+            self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] updating tabs"
             self.update_tabs("change_root")
 
     def update_tabs(self, change, path_click: os.PathLike = None) -> None:
         if path_click == None:
             if change == "change_root":
-                self.debug.value += f"\n[state][update_tabs] root change"
+                self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] root change"
             else:
-                self.debug.value += f"\n[state][update_tabs] dir toggle"
+                self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] dir toggle"
         else:
             self.debug.value += f"\n[state][update_tabs] {path_click} {pformat(change.description)} button"
 
         # dirs = list(self.dirtabs.keys())
         self.active_dirtabs = {
             dt.dir_sel: dt.clist for dt in self.dirtabs.values() if dt.dir_sel.selected}
-        self.debug.value += f"\n[state][update_tabs] active dirs: {pformat([self.active_dirtabs.keys()])}"
+        self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] active dirs: {pformat([self.active_dirtabs.keys()])}"
         children = list(self.active_dirtabs.values())
-        self.debug.value += f"\n[state][update_tabs] tab children: {pformat(children)}"
+        self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] tab children: {pformat(children)}"
         self.file_tabs.children = children
-        self.debug.value += f"\n[state][update_tabs] setting tab titles"
+        self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] setting tab titles"
         for i, dir in enumerate(self.active_dirtabs.keys()):
             self.file_tabs.set_title(i, dir.path.name)
 
@@ -211,7 +212,7 @@ class PathSelectSingleton(w.HBox):
 
     def __new__(cls):
         if cls._instance == None:
-            print("[path_select] Creating path_select singleton")
+            print(f"{datetime.datetime.now()}[path_select] Creating path_select singleton")
             cls._instance = super().__new__(cls)
             cls._instance.state = StateSingleton()
             cls._instance.debug = cls._instance.state.debug
@@ -239,7 +240,7 @@ class PathSelectSingleton(w.HBox):
 
     def on_change(self, change) -> None:
         new_path_str = self.path_t.value if self.path_t.value else self.path_t.placeholder
-        self.debug.value += f"\n[path_select] Changing path to: {new_path_str}"
+        self.debug.value += f"\n{datetime.datetime.now()}[path_select] Changing path to: {new_path_str}"
         try:
             self.state.change_root(new_path_str)
         except:
