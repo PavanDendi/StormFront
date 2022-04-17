@@ -13,12 +13,12 @@ if DBR:
     dbutils = DBUtils.get_dbutils(DBUtils, spark)
     CONTEXT_RAW = json.loads(
         dbutils.notebook.entry_point.getDbutils().notebook().getContext().toJson()
-    )['tags'] if DBR else {}
+    )
 else:
     CONTEXT_RAW = {}
 
 CONTEXT = namedtuple("CONTEXT", ["DBR", "user", "host"])(
     DBR,
-    CONTEXT_RAW.get("user", "local.user"),
-    CONTEXT_RAW.get("browserHostName", "127.0.0.1")
+    CONTEXT_RAW.get('tags', {}).get("user", "local.user"),
+    CONTEXT_RAW.get('extraContext', {}).get("api_url", "127.0.0.1")
 )

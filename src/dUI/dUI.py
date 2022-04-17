@@ -52,7 +52,7 @@ def get_selected() -> list[os.PathLike]:
 def run(jdbc: JDBC,
         queries: list[Query],
         dbs_cfg: DBstressCfg = DBstressCfg(),
-        conn: ConnConfig = ConnConfig()) -> DataFrame:
+        conn: ConnConfig = ConnConfig()):
 
     check_dbs_cfg(dbs_cfg)
     yaml_out = [yaml_str(q, jdbc, conn) for q in queries]
@@ -66,10 +66,10 @@ def run(jdbc: JDBC,
 
     args = toJStringArray(["-c", dbs_cfg.yaml_path, "-o", dbs_cfg.result_path])
 
-    spark._jvm.eu.semberal.dbstress.Main.main(args)
+    result = spark._jvm.eu.semberal.dbstress.Main.main(args)
+    return result
+    # dbfs_dir = list(Path(dbs_cfg.result_path).parts)
+    # dbfs_dir.pop(1)
+    # dbfs_dir = str(Path(*dbfs_dir))
 
-    dbfs_dir = list(Path(dbs_cfg.result_path).parts)
-    dbfs_dir.pop(1)
-    dbfs_dir = str(Path(*dbfs_dir))
-
-    return spark.read.option("header", True).option("InferSchema", True).csv(dbfs_dir)
+    # return spark.read.option("header", True).option("InferSchema", True).csv(dbfs_dir)

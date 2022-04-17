@@ -3,9 +3,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import requests
+from pprint import pprint
 import sqlparse
 from collections import namedtuple
-from typing import NamedTuple
+from typing import NamedTuple, Dict
 
 from . import CONTEXT
 
@@ -33,8 +34,48 @@ class DBstressCfg(NamedTuple):
     result_path: os.PathLike = "/dbfs/tmp/dbstress/output/"
 
 
+# Name
+# Cluster size
+#     2X-Small
+#     X-Small
+#     Small
+#     Medium
+#     Large
+#     X-Large
+#     2X-Large
+#     3X-Large
+#     4X-Large
+
+#     Auto Stop: bool, inactive mins
+#     min max clusters
+#     tags, key: value
+#     serverless: bool
+#     channel: current, preview
+class EndpointCfg(NamedTuple):
+    name: str = 'Storm Cloud'
+    size: str = 'Medium'
+    clusters_min: int = 1
+    clusters_max: int = 1
+    serverless: bool = True
+    channel: str = "CHANNEL_NAME_CURRENT"
+    tags: Dict[str, str] = {}
+
+
+def ntuple(input: dict):
+    """Recursively turn a dict into a named tuple"""
+    for k, v in input.items():
+        if hasattr(v, 'items') and (True in [hasattr(c, 'items') for c in v.items()]):
+            print(v)
+            ntuple(v)
+        elif hasattr(v, 'items') and (True not in [hasattr(c, 'items') for c in v.items()]):
+            input[k] = namedtuple(k, v.keys())(*v.values())
+        else:
+            input[k] = v
+    input = namedtuple('ntuple', input.keys())(*input.values())
+    return input
+
+
 def format_str(detail_dict, filter_keys=None) -> str:
-    lines = []
     if filter_keys:
         lines = [f'{k:<15}{str(detail_dict[k]):>30}' for k in filter_keys]
     else:
@@ -42,15 +83,46 @@ def format_str(detail_dict, filter_keys=None) -> str:
     return "\n".join(lines)
 
 
-def simba_jdbc(token: str, jdbc_d: dict) -> JDBC:
-    host = jdbc_d["hostname"]
-    httpPath = jdbc_d["path"]
-    port = jdbc_d["port"]
+def create_ep(token: str, host: str, ep_cfg: EndpointCfg = EndpointCfg()) -> str:
+    request = {
+        "name": ep_cfg.name,
+        "cluster_size": ep_cfg.size,
+        "min_num_clusters": ep_cfg.clusters_min,
+        "max_num_clusters": ep_cfg.clusters_max,
+        "enable_serverless_compute": ep_cfg.serverless,
+        "channel": {
+            "name": ep_cfg.channel
+        }
+    }
+    apiurl = f"https://{host}/api/2.0/sql/endpoints/"
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.post(apiurl, headers=headers, json=request).json()
+    if (cluster_id := response.get('id', '')) == '':
+        pprint(response)
+        raise BaseException("Something went wrong creating an Endpoint")
+    print("new cluster_id: " + cluster_id)
+    return cluster_id
+
+
+def get_or_del_ep(token: str, host: str, cluster_id: str, delete: bool = False):
+    apiurl = f"https://{host}/api/2.0/sql/endpoints/{cluster_id}"
+    headers = {"Authorization": f"Bearer {token}"}
+    if delete:
+        return requests.delete(apiurl, headers=headers).json()
+    else:
+        return ntuple(requests.get(apiurl, headers=headers).json())
+
+
+def simba_jdbc(token: str, jdbc_d) -> JDBC:
+    host = jdbc_d.hostname
+    httpPath = jdbc_d.path
+    port = jdbc_d.port
     string = f"jdbc:spark://{host}:{port}/{{database}};transportMode=http;ssl=1;"
-    string += f"AuthMech=3;httpPath={httpPath};AuthMech=3;UID=token;PWD={token};UseNativeQuery=1"
+    string += f"AuthMech=3;httpPath={httpPath};UID=token;PWD={token};UseNativeQuery=1"
     return JDBC(string)
 
 
+# TODO: convert return result to using ntuple()
 def get_sql_eps(token: str, host: str = CONTEXT.host):
 
     apiurl = f"https://{host}/api/2.0/sql/endpoints"
