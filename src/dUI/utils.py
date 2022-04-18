@@ -94,7 +94,7 @@ def create_ep(token: str, host: str, ep_cfg: EndpointCfg = EndpointCfg()) -> str
             "name": ep_cfg.channel
         }
     }
-    apiurl = f"https://{host}/api/2.0/sql/endpoints/"
+    apiurl = f"{host}/api/2.0/sql/endpoints/"
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.post(apiurl, headers=headers, json=request).json()
     if (cluster_id := response.get('id', '')) == '':
@@ -105,7 +105,7 @@ def create_ep(token: str, host: str, ep_cfg: EndpointCfg = EndpointCfg()) -> str
 
 
 def get_or_del_ep(token: str, host: str, cluster_id: str, delete: bool = False):
-    apiurl = f"https://{host}/api/2.0/sql/endpoints/{cluster_id}"
+    apiurl = f"{host}/api/2.0/sql/endpoints/{cluster_id}"
     headers = {"Authorization": f"Bearer {token}"}
     if delete:
         return requests.delete(apiurl, headers=headers).json()
@@ -125,7 +125,7 @@ def simba_jdbc(token: str, jdbc_d) -> JDBC:
 # TODO: convert return result to using ntuple()
 def get_sql_eps(token: str, host: str = CONTEXT.host):
 
-    apiurl = f"https://{host}/api/2.0/sql/endpoints"
+    apiurl = f"{host}/api/2.0/sql/endpoints"
     headers = {"Authorization": f"Bearer {token}"}
     eps_raw = requests.get(apiurl, headers=headers).json()['endpoints']
     key_map = {
