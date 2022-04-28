@@ -15,6 +15,7 @@ if DBR:
         dbutils.notebook.entry_point.getDbutils().notebook().getContext().toJson()
     )
 else:
+    from IPython.display import display
     CONTEXT_RAW = {}
 
 CONTEXT = namedtuple("CONTEXT", ["DBR", "user", "host"])(

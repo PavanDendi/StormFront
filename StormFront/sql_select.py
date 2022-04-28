@@ -4,7 +4,7 @@ import json
 import os
 import sys
 from pathlib import Path
-from pprint import pformat
+from pprint import pformat, pprint
 from typing import NamedTuple
 import datetime
 
@@ -116,8 +116,8 @@ class StateSingleton(object):
 
     def __new__(cls, debug_ext: w.Textarea = None):
         if cls._instance == None:
-            print("Creating state singleton")
-            print(f"received args: debug: {debug_ext}")
+            # print("Creating state singleton")
+            # print(f"received args: debug: {debug_ext}")
             cls._instance = super().__new__(cls)
             cls._instance.debug = debug_ext if debug_ext else cls._instance.debug
             cls._instance.debug.value = "[state] state start"
@@ -131,8 +131,8 @@ class StateSingleton(object):
         return cls._instance
 
     def change_root(self, new_root: str = None) -> None:
-        old_root = Path(self.root).resolve() if self.root else Path(
-            self.default_root).resolve()
+        old_root = Path(self.root).resolve() # if self.root else Path(  // not needed since set in new
+            # self.default_root).resolve()
         new_root = Path(new_root).resolve() if new_root else old_root
         new_dirs = self._ls_dirs(new_root)
         self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] old: {old_root}  new: {new_root}"
@@ -142,17 +142,19 @@ class StateSingleton(object):
         if (old_root != new_root) or (len(self.dirtabs) != len(new_dirs)):
             self.root = new_root
             # update path_select widget to start arg; this should only happen once when state singleton is created
-            val = self.path_select.path_t.value
-            self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] updating path_select: {val} -> {self.root}"
-            if val == "":
-                self.path_select.path_t.value = str(self.root)
+            # Is this needed?
+            # val = self.path_select.path_t.value
+            # self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] updating path_select: {val} -> {self.root}"
+            # self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] len(dirtabs): {len(self.dirtabs)}  len(new_dirs): {len(new_dirs)}"
+            # if val == "":
+            #     self.path_select.path_t.value = str(self.root)
 
             self.dirtabs = {}
             for d in self._ls_dirs(self.root):
                 clist = self._ls_sql(d.path)
                 dir_sel = DirSelectRow(PathSelect(d.path))
                 self.dirtabs.update({d.path: DirTab(dir_sel, clist)})
-            self.dirtabs[self.root].dir_sel.dir_b.value = True
+            self.dirtabs[self.root].dir_sel.dir_b.value = True  # why is this being executed inside for loop?
 
             self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] changing dirs: {pformat([p.name for p in self.dirtabs.keys()])}"
             self.dir_select.children = [
@@ -170,8 +172,9 @@ class StateSingleton(object):
             self.debug.value += f"\n[state][update_tabs] {path_click} {pformat(change.description)} button"
 
         # dirs = list(self.dirtabs.keys())
-        self.active_dirtabs = {
+        self.active_dirtabs = {    #// comment out for now so we don't dynamically show tabs
             dt.dir_sel: dt.clist for dt in self.dirtabs.values() if dt.dir_sel.selected}
+        # self.active_dirtabs = { dt.dir_sel: dt.clist for dt in self.dirtabs.values()}
         self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] active dirs: {pformat([self.active_dirtabs.keys()])}"
         children = list(self.active_dirtabs.values())
         self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] tab children: {pformat(children)}"
@@ -186,7 +189,7 @@ class DirSelectSingleton(w.VBox):
 
     def __new__(cls):
         if cls._instance == None:
-            print("[dir_select] Creating dir_select singleton")
+            # print("[dir_select] Creating dir_select singleton")
             cls._instance = super().__new__(cls)
             cls._instance.state = StateSingleton()
             cls._instance.debug = cls._instance.state.debug
@@ -199,7 +202,7 @@ class TabsWidgetSingleton(w.Tab):
 
     def __new__(cls):
         if cls._instance == None:
-            print("[file_tabs] Creating file_tabs singleton")
+            # print("[file_tabs] Creating file_tabs singleton")
             cls._instance = super().__new__(cls)
             cls._instance.state = StateSingleton()
             cls._instance.debug = cls._instance.state.debug
@@ -212,7 +215,7 @@ class PathSelectSingleton(w.HBox):
 
     def __new__(cls):
         if cls._instance == None:
-            print(f"{datetime.datetime.now()}[path_select] Creating path_select singleton")
+            # print(f"{datetime.datetime.now()}[path_select] Creating path_select singleton")
             cls._instance = super().__new__(cls)
             cls._instance.state = StateSingleton()
             cls._instance.debug = cls._instance.state.debug
@@ -239,10 +242,13 @@ class PathSelectSingleton(w.HBox):
         self.children = [self.submit_b, self.path_t]
 
     def on_change(self, change) -> None:
-        new_path_str = self.path_t.value if self.path_t.value else self.path_t.placeholder
+        if not self.path_t.value:
+            self.path_t.value = self.path_t.placeholder
+        new_path_str = self.path_t.value
         self.debug.value += f"\n{datetime.datetime.now()}[path_select] Changing path to: {new_path_str}"
         try:
             self.state.change_root(new_path_str)
-        except:
+        except BaseException as e:
             self.debug.value += f"\n[path_select] PATH CHANGE ERROR"
+            self.debug.value += pformat(e)
             return(None)

@@ -9,8 +9,8 @@ class DBStateSingleton(object):
 
     def __new__(cls, debug_ext: w.Textarea = None):
         if cls._instance == None:
-            print("Creating DB state singleton")
-            print(f"received args: debug: {debug_ext}")
+            # print("Creating DB state singleton")
+            # print(f"received args: debug: {debug_ext}")
             cls._instance = super().__new__(cls)
             cls._instance.debug = debug_ext if debug_ext else cls._instance.debug
             cls._instance.debug.value = "[db_state] DB state start"
@@ -26,7 +26,7 @@ class DBListSingleton(w.VBox):
 
     def __new__(cls):
         if cls._instance == None:
-            print("Creating DB list singleton")
+            # print("Creating DB list singleton")
             cls._instance = super().__new__(cls)
             cls._instance.debug.value = "[db_list] DB select start"
             cls._instance.dblist = []
