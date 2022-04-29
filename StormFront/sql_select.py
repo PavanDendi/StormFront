@@ -24,48 +24,56 @@ class DirSelectRow(w.HBox):
         self.debug = self.state.debug
         self.path = Path(dir.path)
         self.selected = dir.selected
-        self.dir_b = w.ToggleButton(
-            value=self.selected,
+        self.dir_b = w.Button(
+            # value=self.selected,
+            disabled=True,
             description=self.path.name,
-            icon='folder-open' if self.selected else 'folder',
+            icon='folder-open' if self.path==self.state.root else 'folder',
             button_style='',  # 'success', 'info', 'warning', 'danger' or ''
             layout=w.Layout(width="100%"),
             style={'description_width': 'initial'},
         )
-        self.dir_b.observe(self.__on_toggle__, names="value")
+        # self.dir_b.observe(self.__on_toggle__, names="value")
 
         self.all_b = w.Button(description="All", layout=w.Layout(width="4em"))
         self.all_b.on_click(self.__on_click__)
 
         self.none_b = w.Button(
-            description="None", layout=w.Layout(width="6em"), style={'description_width': 'initial'})
+            description="None", layout=w.Layout(width="8em"), style={'description_width': 'initial'})
         self.none_b.on_click(self.__on_click__)
 
         super().__init__([self.dir_b, self.all_b, self.none_b])
 
-    def __on_toggle__(self, change):
-        self.debug.value += f"\n{datetime.datetime.now()}[DirRow] '{self.path.name}' received: {pformat(change)}"
-        self.dir_b.icon = 'folder-open' if self.dir_b.value else 'folder'
-        self.selected = self.dir_b.value
-        self.state.update_tabs(change)
+    # def __on_toggle__(self, change):
+    #     self.debug.value += f"\n{datetime.datetime.now()}[DirRow] '{self.path.name}' received: {pformat(change)}"
+    #     # self.dir_b.icon = 'folder-open' if self.dir_b.value else 'folder'
+    #     # self.selected = self.dir_b.value
+    #     self.state.update_tabs(change)
 
     def __on_click__(self, change):
-        # self.debug.value += f"\n[DirRow] '{self.path.name}' click: {pformat(change)}"
+        self.debug.value += f"\n[DirRow] '{self.path.name}' click: {pformat(change)}"
         # test = self.state.dirtabs.keys()
         files = self.state.dirtabs.get(self.path).clist.children
-        self.debug.value += f"\n[DirRow] '{self.path}' dirtabs: {pformat(files)}"
-        if change.description == "All":
-            self.dir_b.value = True
-            self.selected = True
-            for file in files:
-                file.value = True
-        elif change.description == "None":
-            for file in files:
-                file.value = False
-        self.state.update_tabs(change, self.path)
-        index = list(self.state.active_dirtabs.keys()).index(self)
+        # self.debug.value += f"\n[DirRow] '{self.path}' dirtabs: {pformat(files)}"
+
+        # index = list(self.state.dirtabs.keys()).index(self.path.name)
+        index = list(self.state.dirtabs.keys()).index(self.path)
         self.debug.value += f"\n[DirRow] '{self.path}' tab index: {pformat(index)}"
         self.state.file_tabs.selected_index = index
+
+        select_all = {"All": True, "None": False}.get(change.description)
+        for f in files:
+            f.value = select_all
+        # if change.description == "All":
+        #     # self.dir_b.value = True
+        #     # self.selected = True
+        #     for file in files:
+        #         file.value = True
+        # elif change.description == "None":
+        #     for file in files:
+        #         file.value = False
+        # self.state.update_tabs(change, self.path)
+
 
 
 class FileCheckList(w.VBox):
@@ -98,7 +106,7 @@ class DirTab(NamedTuple):
 
 class StateSingleton(object):
     _instance = None
-    default_root = f'/Workspace/Repos/{CONTEXT.user}/dUI/queries' if CONTEXT.DBR else os.getcwd()
+    default_root = f'/Workspace/User/{CONTEXT.user}/' if CONTEXT.DBR else os.getcwd()
     debug = w.Textarea(layout=w.Layout(width="100%", height="10em"))
 
     @staticmethod
@@ -154,34 +162,42 @@ class StateSingleton(object):
                 clist = self._ls_sql(d.path)
                 dir_sel = DirSelectRow(PathSelect(d.path))
                 self.dirtabs.update({d.path: DirTab(dir_sel, clist)})
-            self.dirtabs[self.root].dir_sel.dir_b.value = True  # why is this being executed inside for loop?
+            
+            # self.dirtabs[self.root].dir_sel.dir_b.value = True  # why is this being executed inside for loop?
 
             self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] changing dirs: {pformat([p.name for p in self.dirtabs.keys()])}"
-            self.dir_select.children = [
-                dt.dir_sel for dt in self.dirtabs.values()]
+            self.dir_select.children = [dt.dir_sel for dt in self.dirtabs.values()]
             self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] updating tabs"
-            self.update_tabs("change_root")
+            
+            tabs = [dt.clist for dt in self.dirtabs.values()]
+            # self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] tab children: {pformat(tabs)}"
+            self.file_tabs.children = tabs
+            for i, dir in enumerate(self.dirtabs.keys()):
+                self.file_tabs.set_title(i, dir.name)
+            
+            # self.update_tabs("change_root")
 
-    def update_tabs(self, change, path_click: os.PathLike = None) -> None:
-        if path_click == None:
-            if change == "change_root":
-                self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] root change"
-            else:
-                self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] dir toggle"
-        else:
-            self.debug.value += f"\n[state][update_tabs] {path_click} {pformat(change.description)} button"
+    # def update_tabs(self, change, path_click: os.PathLike = None) -> None:
+    #     # if path_click == None:
+    #     #     if change == "change_root":
+    #     #         self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] root change"
+    #     #         self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] new dirs: {pformat([self.active_dirtabs.keys()])}"
+    #     #     else:
+    #     #         self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] dir toggle"
+    #     # else:
+    #     #     self.debug.value += f"\n[state][update_tabs] {path_click} {pformat(change.description)} button"
 
-        # dirs = list(self.dirtabs.keys())
-        self.active_dirtabs = {    #// comment out for now so we don't dynamically show tabs
-            dt.dir_sel: dt.clist for dt in self.dirtabs.values() if dt.dir_sel.selected}
-        # self.active_dirtabs = { dt.dir_sel: dt.clist for dt in self.dirtabs.values()}
-        self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] active dirs: {pformat([self.active_dirtabs.keys()])}"
-        children = list(self.active_dirtabs.values())
-        self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] tab children: {pformat(children)}"
-        self.file_tabs.children = children
-        self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] setting tab titles"
-        for i, dir in enumerate(self.active_dirtabs.keys()):
-            self.file_tabs.set_title(i, dir.path.name)
+    #     # dirs = list(self.dirtabs.keys())
+    #     # self.active_dirtabs = {    #// comment out for now so we don't dynamically show tabs
+    #     #     dt.dir_sel: dt.clist for dt in self.dirtabs.values() if dt.dir_sel.selected}
+    #     self.active_dirtabs = { dt.dir_sel: dt.clist for dt in self.dirtabs.values()}
+    #     children = [dt.clist for dt in self.dirtabs.values()]
+    #     # children = list(self.active_dirtabs.values())
+    #     self.file_tabs.children = children
+    #     self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] tab children: {pformat(children)}"
+    #     self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] setting tab titles"
+    #     for i, dir in enumerate(self.active_dirtabs.keys()):
+    #         self.file_tabs.set_title(i, dir.path.name)
 
 
 class DirSelectSingleton(w.VBox):
@@ -226,10 +242,10 @@ class PathSelectSingleton(w.HBox):
                 layout=w.Layout(width="16em")
             )
             cls._instance.path_t = w.Text(
-                value="",
+                value=cls._instance.state.default_root,
                 layout=w.Layout(width="100%"),
                 description="Queries Path: ",
-                placeholder=cls._instance.state.default_root,
+                # placeholder=cls._instance.state.default_root,
                 style={"description_width": "7em"}
             )
         return cls._instance
@@ -242,8 +258,8 @@ class PathSelectSingleton(w.HBox):
         self.children = [self.submit_b, self.path_t]
 
     def on_change(self, change) -> None:
-        if not self.path_t.value:
-            self.path_t.value = self.path_t.placeholder
+        # if not self.path_t.value:
+        #     self.path_t.value = self.path_t.placeholder
         new_path_str = self.path_t.value
         self.debug.value += f"\n{datetime.datetime.now()}[path_select] Changing path to: {new_path_str}"
         try:
