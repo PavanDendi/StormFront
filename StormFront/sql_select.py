@@ -171,6 +171,7 @@ class StateSingleton(object):
             
             tabs = [dt.clist for dt in self.dirtabs.values()]
             # self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] tab children: {pformat(tabs)}"
+            self.file_tabs.children = []
             self.file_tabs.children = tabs
             for i, dir in enumerate(self.dirtabs.keys()):
                 self.file_tabs.set_title(i, dir.name)
