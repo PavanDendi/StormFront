@@ -151,7 +151,7 @@ def get_sql_eps(token: str, host: str = CONTEXT.host):
     for ep in eps.values():
         ep["format_str"] = format_str(
             {v: ep[k] for k, v in key_map.items()}, filter_keys)
-        ep["odbc_params"] = simba_jdbc(token, ep["odbc_params"])
+        ep["odbc_params"] = simba_jdbc(token, ntuple(ep["odbc_params"]))
 
     return {name: namedtuple('ep', e.keys())(*e.values()) for name, e in eps.items()}
 
