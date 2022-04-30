@@ -106,7 +106,7 @@ class DirTab(NamedTuple):
 
 class StateSingleton(object):
     _instance = None
-    default_root = f'/Workspace/User/{CONTEXT.user}/' if CONTEXT.DBR else os.getcwd()
+    default_root = f'/Workspace/Repos/{CONTEXT.user}/' if CONTEXT.DBR else os.getcwd()
     debug = w.Textarea(layout=w.Layout(width="100%", height="10em"))
 
     @staticmethod
