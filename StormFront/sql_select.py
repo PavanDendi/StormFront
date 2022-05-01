@@ -165,18 +165,18 @@ class StateSingleton(object):
                 self.dirtabs.update({d.path: DirTab(dir_sel, clist)})
             
             # self.dirtabs[self.root].dir_sel.dir_b.value = True  # why is this being executed inside for loop?
-
+            dirnames = [p.name for p in self.dirtabs.keys()]
             self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] changing dirs: {pformat([p.name for p in self.dirtabs.keys()])}"
             self.dir_select.children = [dt.dir_sel for dt in self.dirtabs.values()]
             self.debug.value += f"\n{datetime.datetime.now()}[state][change_root] updating tabs"
             
             tabs = [dt.clist for dt in self.dirtabs.values()]
             # self.debug.value += f"\n{datetime.datetime.now()}[state][update_tabs] tab children: {pformat(tabs)}"
-            self.file_tabs.children = []
-            sleep(2)
+            # self.file_tabs.children = []
+            # sleep(2)
             self.file_tabs.children = tabs
-            for i, dir in enumerate(self.dirtabs.keys()):
-                self.file_tabs.set_title(i, dir.name)
+            for i, dir in zip(range(len(dirnames), dirnames)):
+                self.file_tabs.set_title(i, dir)
             
             # self.update_tabs("change_root")
 
