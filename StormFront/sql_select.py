@@ -175,7 +175,7 @@ class StateSingleton(object):
             # self.file_tabs.children = []
             # sleep(2)
             self.file_tabs.children = tabs
-            for i, dir in zip(range(len(dirnames), dirnames)):
+            for i, dir in zip(range(len(dirnames)), dirnames):
                 self.file_tabs.set_title(i, dir)
             
             # self.update_tabs("change_root")
